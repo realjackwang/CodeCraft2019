@@ -23,7 +23,7 @@ def main():
     logging.info("cross_path is %s" % (cross_path))
     logging.info("answer_path is %s" % (answer_path))
 
-    def
+
 
 # to read input file
 # process
