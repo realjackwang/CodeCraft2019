@@ -8,10 +8,9 @@
 
 
 def read(path):
-
+    data = []
     with open(path) as input_file:
         input_data = input_file.readlines()
-        global data
         if input_data[0][5] == 'f':
             data = [_id, _from, to, speed, planTime] = [[], [], [], [], []]
         elif input_data[0][5] == 'r':
