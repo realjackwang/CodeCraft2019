@@ -1,5 +1,6 @@
 import logging
 import sys
+from ReadInput import *
 
 logging.basicConfig(level=logging.DEBUG,
                     filename='../logs/CodeCraft-2019.log',
@@ -23,11 +24,9 @@ def main():
     logging.info("cross_path is %s" % (cross_path))
     logging.info("answer_path is %s" % (answer_path))
 
-
-
-# to read input file
-# process
-# to write output file
+    data_car = read(car_path)
+    data_cross = read(cross_path)
+    data_road = read(road_path)
 
 
 if __name__ == "__main__":
