@@ -31,13 +31,6 @@ def main():
         logging.info('please input args: car_path, road_path, cross_path, answerPath')
         exit(1)
 
-    # aaa = '5'
-    #
-    # car_path = 'data/' + aaa + '/car.txt'
-    # road_path = 'data/' + aaa + '/road.txt'
-    # cross_path = 'data/' + aaa + '/cross.txt'
-    # answer_path = 'data/' + aaa + '/answer.txt'
-
     car_path = sys.argv[1]
     road_path = sys.argv[2]
     cross_path = sys.argv[3]
@@ -49,8 +42,8 @@ def main():
     logging.info("answer_path is %s" % (answer_path))
 
     data_answer = []
-    global data_answers
-    data_answers = []
+    data_answers = []  # 存放伪题器的位置
+
     data_car = np.array(read(car_path))
     data_cross = read(cross_path)
     data_road = read(road_path)
@@ -74,50 +67,63 @@ def main():
     for i in range(len(data_road[0])):
         roads[str(data_road[4][i]) + '+' + str(data_road[5][i])] = data_road[0][i]
 
-    for k in range(8):
+    for k in range(7):
 
         while len(data_car_sort[6 - k][0]) > 0:
-            print(len(data_car_sort[0][0]) + len(data_car_sort[1][0]) + len(data_car_sort[2][0]) + len(
-                data_car_sort[3][0])+len(data_car_sort[4][0])+len(data_car_sort[5][0])+len(data_car_sort[6][0]), end='\t')
 
             car = [data_car_sort[6 - k][0][0], data_car_sort[6 - k][1][0],
                    data_car_sort[6 - k][2][0], data_car_sort[6 - k][3][0],
                    data_car_sort[6 - k][4][0]]  # 当前车辆的信息
 
+            if data_car_sort[6 - k][4][0] > current_time:
+                current_time += 1
+                continue
+
             # 决定走哪条路
-            road_and_cross_passed, distance, current_car = less_road(car, data_cross, data_road, current_time)
+
+            road_and_cross_passed, distance = less_road(car, data_cross, data_road, data_answers, current_time)
+
             road_passed = cross_to_road(road_and_cross_passed)
 
-            if sum(current_car) <= min(current_time * 10, a) and 6 - k == 6:  # 速度为16
-                time = True
-            elif sum(current_car) <= b and 6 - k == 5:  # 速度为14
-                time = True
-            elif sum(current_car) <= c and 6 - k == 4:  # 速度为12
-                time = True
-            elif sum(current_car) <= d and 6 - k == 3:  # 速度为10
-                time = True
-            elif sum(current_car) <= e and 6 - k == 2:  # 速度为8
-                time = True
-            elif sum(current_car) <= f and 6 - k == 1:  # 速度为6
-                time = True
-            elif sum(current_car) <= g and 6 - k == 0:  # 速度为4
-                time = True
+            current_car.append(abs(distance) + current_time)
+            poplist = []
+            for i in range(len(current_car)):
+                if current_time > current_car[i]:
+                    poplist.append(i)
+            for i in range(len(poplist)):
+                current_car.pop(poplist[len(poplist) - i - 1])
+
+            # time = cul_time(road_passed, data_road, car, car_cycle)
+
+            if len(current_car) <= min(current_time * 10, a) and 6 - k == 6:  # 速度为16
+                time = 0
+            elif len(current_car) <= b and 6 - k == 5:  # 速度为14
+                time = 0
+            elif len(current_car) <= c and 6 - k == 4:  # 速度为12
+                time = 0
+            elif len(current_car) <= d and 6 - k == 3:  # 速度为10
+                time = 0
+            elif len(current_car) <= e and 6 - k == 2:  # 速度为8
+                time = 0
+            elif len(current_car) <= f and 6 - k == 1:  # 速度为6
+                time = 0
+            elif len(current_car) <= g and 6 - k == 0:  # 速度为4
+                time = 0
             else:
-                time = False
+                time = int(abs(distance))
 
             # 决定什么时候走
-            if time and data_car_sort[6 - k][4][0] <= current_time:
-                # and current_car[] < (data_road[3][car[1] - 1] * data_road[1][car[1] - 1]) / 2:
-                data_answer.append([car[0], current_time])
-                data_answers.append([car[0], current_time])
-                for i in range(len(road_passed)):
-                    data_answer[-1].append(road_passed[i])
-                    data_answers[-1].append(road_passed[i])
 
-                data_car_sort[6 - k] = np.delete(data_car_sort[6 - k], 0, 1)  # 删除已调度的车辆
-            else:
-                current_time += 1
-            print(current_time, end='\t')
+            data_answer.append([car[0], current_time])
+            data_answers.append([car[0], current_time])
+            for i in range(len(road_passed)):
+                data_answer[-1].append(road_passed[i])
+                data_answers[-1].append(road_passed[i])
+
+            data_car_sort[6 - k] = np.delete(data_car_sort[6 - k], 0, 1)  # 删除已调度的车辆
+
+            current_time += time
+            print(current_time)
 
     with open(answer_path, "w") as f:
         f.write('#(carId,StartTime,RoadId...)' + '\r\n')  # \r\n为换行符
@@ -147,14 +153,13 @@ def choose_var(car):
     return a, b, c, d, e, f, g
 
 
-def fakesimulator(current_time, data_road):
+def less_road(car, data_cross, data_road, data_answer, current_time):
+
     data_answer_remove = []
-    for answer in data_answers:
-        if answer[1] <= current_time and type(answer[2]) is not list:
+    for answer in data_answer:
+        if answer[1] <= current_time and type(answer[2])!= list:
             answer.insert(2, [answer[2], 1])
-            answer[1] += 1
         elif answer[1] < current_time:
-            answer[1] += 1
             if len(answer) > 4:
                 next = nextplace(answer[2][1], 10, answer[2][0], answer[4], data_road)
                 if next[0] != answer[2][0]:
@@ -167,7 +172,7 @@ def fakesimulator(current_time, data_road):
                     data_answer_remove.append(answer)
 
     for answer_remove in data_answer_remove:
-        data_answers.remove(answer_remove)
+        data_answer.remove(answer_remove)
 
     def find_current_car(num):
         for i in range(len(data_road[0])):
@@ -176,21 +181,15 @@ def fakesimulator(current_time, data_road):
         assert "异常"
 
     current_car = [0 for i in range(len(data_road[0]))]
-    for answer in data_answers:
+    for answer in data_answer:
         if type(answer[2]) is list:
             current_car[find_current_car(answer[2][0])] += 1
-    return current_car
-
-
-def less_road(car, data_cross, data_road, current_time):
-    current_car = fakesimulator(current_time, data_road)
 
     vertexs, vset, edges = create_map(data_cross, data_road, car, current_car)
 
     the_road, distance = find_road(vertexs, vset, edges, car[1], car[2])
 
-    print(sum(current_car))
-    return the_road, distance, current_car
+    return the_road, distance
 
 
 def nextplace(place, carspeed, now, next, data_road):
@@ -214,11 +213,13 @@ def nextplace(place, carspeed, now, next, data_road):
 
 
 def isend(place, carspeed, now, data_road):
+
     def find_current_car(num):
         for i in range(len(data_road[0])):
             if data_road[0][i] == num:
                 return i
         assert "异常"
+
     speed1 = min(data_road[2][find_current_car(now)], carspeed)
     if speed1 + place <= data_road[1][find_current_car(now)]:
         return [now, speed1 + place], False
@@ -240,22 +241,7 @@ def cross_to_road(the_road):
     return road_passed
 
 
-def road_edges(i, data_road, car, current_car):
-    """计算每条路的权值"""
-    a = 0.5  # 道路长度的影响程度
-    b = 10  # 车速的影响程度
-    c = 100  # 车道数的影响程度
-    d = 5  # 每条道路上车辆数目的影响程度
-
-    # value = data_road[1][i] / min(car[3], data_road[2][i])
-    value = (a * data_road[1][i]) + (b / min(car[3], data_road[2][i])) + \
-            (c / data_road[2][i]) + (d * (current_car[i] + 1) ** 2)
-
-    return value
-
-
 def create_map(data_cross, data_road, car, current_car):
-    """将TXT转化成有向图"""
     vertexs = [False]  # 顶点们
     edges = dict()  # 道路权值
 
@@ -270,27 +256,23 @@ def create_map(data_cross, data_road, car, current_car):
 
     for i in range(len(data_road[0])):
 
-        value = road_edges(i, data_road, car, current_car)
+        value = data_road[1][i] / min(car[3], data_road[2][i])
 
-        if current_car[i] < (data_road[3][i] * data_road[1][i]) / 2:
+        if data_road[6][i] == 1:  # 双行道
+            vertexs[find_vertex(data_road[4][i])].outList.append(data_road[5][i])
+            vertexs[find_vertex(data_road[5][i])].outList.append(data_road[4][i])
+            edges[(data_road[4][i], data_road[5][i])] = value
+            edges[(data_road[5][i], data_road[4][i])] = value
 
-            if data_road[6][i] == 1:  # 双行道
-
-                vertexs[find_vertex(data_road[4][i])].outList.append(data_road[5][i])
-                vertexs[find_vertex(data_road[5][i])].outList.append(data_road[4][i])
-                edges[(data_road[4][i], data_road[5][i])] = value
-                edges[(data_road[5][i], data_road[4][i])] = value
-
-            else:  # 单行道
-                vertexs[find_vertex(data_road[4][i])].outList.append(data_road[5][i])
-                edges[(data_road[4][i], data_road[5][i])] = value
+        else:  # 单行道
+            vertexs[find_vertex(data_road[4][i])].outList.append(data_road[5][i])
+            edges[(data_road[4][i], data_road[5][i])] = value
 
     vertexs = cut_down_road(vertexs, data_cross, data_road, car)
 
     vset = vertexs.copy()
     vset.remove(False)
     vset = set(vset)
-
     return vertexs, vset, edges
 
 
@@ -302,6 +284,7 @@ def find_road(vertexs, vset, edges, begin, stop):
         assert "异常"
 
     vertexs[find_vertex(begin)].dist = 0
+
 
     def get_unknown_min():
         the_min = 0

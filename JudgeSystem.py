@@ -22,7 +22,7 @@ def judge():
     data_car, data_cross, data_road = read_all(path)
 
 
-# todo(JackWang): compete this code
+# todo(JackWang): complete this code
 
 
 if __name__ == '__main__':
